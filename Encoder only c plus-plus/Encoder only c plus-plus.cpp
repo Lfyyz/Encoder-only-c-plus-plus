@@ -1,20 +1,96 @@
-﻿// Encoder only c plus-plus.cpp : Этот файл содержит функцию "main". Здесь начинается и заканчивается выполнение программы.
-//
+﻿#include <iostream>
+#include <string>
+#include <fstream>
+#include <windows.h>
+#include <shlobj.h>
+#include <filesystem>
 
-#include <iostream>
+using namespace std;
 
-int main()
-{
-    std::cout << "Hello World!\n";
+string xorEncryptDecrypt(const string& text, char key) {
+    string output = text;
+
+    for (size_t i = 0; i < text.size(); i++) {
+        output[i] = text[i] ^ key;
+    }
+
+    return output;
 }
 
-// Запуск программы: CTRL+F5 или меню "Отладка" > "Запуск без отладки"
-// Отладка программы: F5 или меню "Отладка" > "Запустить отладку"
+int main() {
+    int choice;
+    string text;
+    char key;
 
-// Советы по началу работы 
-//   1. В окне обозревателя решений можно добавлять файлы и управлять ими.
-//   2. В окне Team Explorer можно подключиться к системе управления версиями.
-//   3. В окне "Выходные данные" можно просматривать выходные данные сборки и другие сообщения.
-//   4. В окне "Список ошибок" можно просматривать ошибки.
-//   5. Последовательно выберите пункты меню "Проект" > "Добавить новый элемент", чтобы создать файлы кода, или "Проект" > "Добавить существующий элемент", чтобы добавить в проект существующие файлы кода.
-//   6. Чтобы снова открыть этот проект позже, выберите пункты меню "Файл" > "Открыть" > "Проект" и выберите SLN-файл.
+    cout << "Choose an option:\n";
+    cout << "1. Decrypt text\n";
+    cout << "2. Encrypt text\n";
+    cout << "Enter your choice (1 or 2): ";
+    cin >> choice;
+    cin.ignore();
+
+    if (choice == 1) {
+        cout << "Enter text to decrypt (in hexadecimal format): ";
+        getline(cin, text);
+        cout << "Enter key (one character): ";
+        cin >> key;
+
+        string decryptedText;
+        for (size_t i = 0; i < text.length(); i += 2) {
+            string byteString = text.substr(i, 2);
+            char byte = (char)(stoi(byteString, nullptr, 16));
+            decryptedText += byte;
+        }
+
+        string finalDecryptedText = xorEncryptDecrypt(decryptedText, key);
+        cout << "Decrypted text: " << finalDecryptedText << endl;
+
+    }
+    else if (choice == 2) {
+        cout << "Enter text to encrypt: ";
+        getline(cin, text);
+        cout << "Enter key (one character): ";
+        cin >> key;
+
+        // Шифруем текст
+        string cipherText = xorEncryptDecrypt(text, key);
+        cout << "Encrypted text (hex): ";
+        for (char c : cipherText) {
+            cout << hex << (int)c;
+        }
+        cout << endl;
+        char saveOption;
+        cout << "Do you want to save the key and encrypted text to a file on the desktop? (y/n): ";
+        cin >> saveOption;
+
+        if (saveOption == 'y' || saveOption == 'Y') {
+            char path[MAX_PATH];
+            if (SUCCEEDED(SHGetFolderPathA(NULL, CSIDL_DESKTOPDIRECTORY, NULL, 0, path))) {
+                string desktopPath = string(path) + "\\encrypted_data.txt";
+                cout << "Path to save file: " << desktopPath << endl;
+                ofstream outFile(desktopPath);
+                if (outFile.is_open()) {
+                    outFile << "Key: " << key << endl;
+                    outFile << "Encrypted text (hex): ";
+                    for (char c : cipherText) {
+                        outFile << hex << (int)c;
+                    }
+                    outFile << endl;
+                    outFile.close();
+                    cout << "Data saved to " << desktopPath << endl;
+                }
+                else {
+                    cout << "Error opening file for writing." << endl;
+                }
+            }
+            else {
+                cout << "Error getting desktop path." << endl;
+            }
+        }
+    }
+    else {
+        cout << "Invalid choice. Please enter 1 or 2." << endl;
+    }
+
+    return 0;
+}
